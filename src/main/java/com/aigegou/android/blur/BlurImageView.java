@@ -102,7 +102,6 @@ public class BlurImageView extends ImageView {
         protected void onPostExecute(Bitmap bitmap) {
             super.onPostExecute(bitmap);
             if (bitmap != null) {
-//                Bitmap blurredBitmap = BlurBuilder.blur(context, bitmap);
                 Bitmap blurredBitmap = fastBlurImage(bitmap);
                 thisImg.setImageBitmap(blurredBitmap);
             }
@@ -125,15 +124,6 @@ public class BlurImageView extends ImageView {
         Bitmap bitmapBlur = null;
 
         if (bitmap != null) {
-            float w = (float) this.getMeasuredWidth() / (float) bitmap.getWidth();
-            float h = (float) this.getMeasuredHeight() / (float) bitmap.getHeight();
-            if (w == 0 || h == 0) {
-                return bitmap;
-            }
-            Matrix matrix = new Matrix();
-            matrix.postScale(w, h);
-            final Bitmap resizeBmp = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-
             bitmapBlur = FastBlur.of(context, bitmap, null);
         }
 
