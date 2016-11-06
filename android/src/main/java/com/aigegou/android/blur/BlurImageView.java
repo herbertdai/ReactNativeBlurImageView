@@ -124,12 +124,17 @@ public class BlurImageView extends ImageView {
         Bitmap bitmapBlur = null;
 
         if (bitmap != null) {
-            bitmapBlur = FastBlur.of(context, bitmap, null);
+            BlurFactor blurFactor = new BlurFactor();
+
+            blurFactor.radius = this.radius;
+            blurFactor.sampling = this.sampling;
+
+            blurFactor.width = bitmap.getWidth();
+            blurFactor.height = bitmap.getHeight();
+
+            bitmapBlur = FastBlur.of(context, bitmap, blurFactor);
         }
 
         return bitmapBlur;
     }
-
-
-
 }
