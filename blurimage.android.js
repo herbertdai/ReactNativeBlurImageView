@@ -1,6 +1,8 @@
-var React = require('React');
-var { requireNativeComponent, View } = require('react-native');
-const { PropTypes } = React
+// @flow
+'use strict';
+
+import React,{ PropTypes } from 'react'
+import { requireNativeComponent, View } from 'react-native';
 
 var iface = {
     name: 'BlurImageView',
