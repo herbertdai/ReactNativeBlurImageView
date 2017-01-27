@@ -1,6 +1,5 @@
 package com.aigegou.android.blur;
 
-import com.aigegou.android.blur.BlurImageView;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.annotations.ReactProp;
@@ -20,18 +19,36 @@ public class BlurImageViewManager extends SimpleViewManager<BlurImageView> {
     protected BlurImageView createViewInstance(ThemedReactContext reactContext) {
         return new BlurImageView(reactContext);
     }
-    @ReactProp(name = "radius", defaultInt = 0)
+    @ReactProp(name = "radius", defaultInt = 5)
     public void setRadius(BlurImageView view, int radius) {
-        view.setRadiusAndUpdate(radius);
+        view.setRadius(radius);
     }
 
-    @ReactProp(name = "sampling", defaultInt = 0)
+    /**
+     * Must be a power of 2.
+     */
+    @ReactProp(name = "sampling", defaultInt = 1)
     public void setSampling(BlurImageView view, int sampling) {
-        view.setSamplingAndUpdate(sampling);
+        view.setSampling(sampling);
     }
 
     @ReactProp(name = "imageUrl")
     public void setImageUrl(BlurImageView view, String url) {
-        view.setImageUrlAndUpdate(url);
+        view.setImageUrl(url);
+    }
+
+    @ReactProp(name = "androidDrawable")
+    public void setAndroidDrawable(BlurImageView view, String androidDrawable) {
+        view.setAndroidDrawable(androidDrawable);
+    }
+
+    @ReactProp(name = "scaleType")
+    public void setScaleType(BlurImageView view, String scaleType) {
+        view.setScaleType(scaleType);
+    }
+
+    @ReactProp(name = "color")
+    public void setColor(BlurImageView view, int color) {
+        view.setColor(color);
     }
 }

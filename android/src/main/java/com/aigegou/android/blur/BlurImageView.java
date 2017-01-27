@@ -3,14 +3,14 @@ package com.aigegou.android.blur;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.os.AsyncTask;
-import android.text.TextUtils;
+import android.support.annotation.NonNull;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.widget.ImageView;
+
 import com.squareup.picasso.Picasso;
 
-import java.io.File;
 import java.io.IOException;
 
 /**
@@ -19,123 +19,161 @@ import java.io.IOException;
 public class BlurImageView extends ImageView {
 
     private final Context context;
-    private final BlurImageView thisImg;
-    private String color;
     private int radius;
     private int sampling;
+    private int color;
     private String imageUrl;
+    private String androidDrawable;
     private GetHeadBitmapTask getheadBitmapTask;
 
+    private boolean isDirty = false;
+
     public BlurImageView(Context context) {
-        super(context);
-        this.context = context;
-        thisImg = this;
-        this.setScaleType(ScaleType.FIT_XY);
+        this(context, null);
     }
 
     public BlurImageView(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
         this.context = context;
-        thisImg = this;
-        this.setScaleType(ScaleType.FIT_XY);
+        setScaleType(ScaleType.FIT_XY);
     }
 
-    public void setImageUrlAndUpdate(String imageUrl) {
-        setImageUrl(imageUrl);
-        Render();
-    }
-
-    private void setImageUrl(String imageUrl) {
+    public void setImageUrl(String imageUrl) {
+        isDirty = true;
         this.imageUrl = imageUrl;
     }
 
-    public void setRadiusAndUpdate(int radius) {
-        setRadius(radius);
-        Render();
+    public void setAndroidDrawable(String androidDrawable) {
+        isDirty = true;
+        this.androidDrawable = androidDrawable;
     }
 
-    private void setRadius(int radius) {
+    public void setRadius(int radius) {
+        isDirty = true;
         this.radius = radius;
     }
 
-    public void setSamplingAndUpdate(int sampling) {
-        setSampling(sampling);
-        Render();
-    }
-
-    private void setSampling(int sampling) {
+    public void setSampling(int sampling) {
+        isDirty = true;
         this.sampling = sampling;
     }
 
-    public void setColorAndUpdate(String color) {
+    public void setColor(int color) {
+        isDirty = true;
         this.color = color;
-        Render();
     }
 
-    private void Render() {
-        if (!TextUtils.isEmpty(imageUrl)) {
-            if (getheadBitmapTask != null) {
-                getheadBitmapTask.cancel(true);
-                getheadBitmapTask = null;
-            }
-            getheadBitmapTask = new GetHeadBitmapTask();
-            getheadBitmapTask.execute(imageUrl);
+    public void setScaleType(String scaleType) {
+        switch (scaleType.toUpperCase().replace("_", "")) {
+            case "CENTER":
+                setScaleType(ScaleType.CENTER);
+                break;
+            case "CENTERCROP":
+                setScaleType(ScaleType.CENTER_CROP);
+                break;
+            case "CENTERINSIDE":
+                setScaleType(ScaleType.CENTER_INSIDE);
+                break;
+            case "FITCENTER":
+                setScaleType(ScaleType.FIT_CENTER);
+                break;
+            case "FITEND":
+                setScaleType(ScaleType.FIT_END);
+                break;
+            case "FITSTART":
+                setScaleType(ScaleType.FIT_START);
+                break;
+            case "FITXY":
+                setScaleType(ScaleType.FIT_XY);
+                break;
+            case "MATRIX":
+                setScaleType(ScaleType.MATRIX);
+                break;
+            default:
+                throw new RuntimeException("Invalid scaleType " + scaleType);
         }
     }
 
-    class GetHeadBitmapTask extends AsyncTask<String, String, Bitmap> {
-        Bitmap bitmap = null;
-        String imageUrl = null;
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (w > 0 && h > 0) {
+            updateView();
+        }
+    }
+
+    private void updateView() {
+        if (!isDirty) {
+            return;
+        }
+        if (imageUrl == null && androidDrawable == null) {
+            throw new RuntimeException("BlurImageView: Must set imageUrl or androidDrawable");
+        }
+        if (imageUrl != null && androidDrawable != null) {
+            throw new RuntimeException("BlurImageView: Must set either imageUrl or androidDrawable, not both");
+        }
+        if (sampling == 0) {
+            throw new RuntimeException("BlurImageView: Must set sampling to non-zero value");
+        }
+        if (getheadBitmapTask != null) {
+            getheadBitmapTask.cancel(true);
+            getheadBitmapTask = null;
+        }
+        getheadBitmapTask = new GetHeadBitmapTask();
+        getheadBitmapTask.execute();
+    }
+
+    private Bitmap loadAndroidDrawable() {
+        int id = context.getResources().getIdentifier(androidDrawable, "drawable", context.getPackageName());
+        if (id == 0) {
+            throw new RuntimeException("Could not get drawable " + androidDrawable + " package " + context.getPackageName());
+        }
+        return BitmapFactory.decodeResource(getContext().getApplicationContext().getResources(), id);
+    }
+
+    public Bitmap loadImgUrl() {
+        try {
+            return Picasso.with(context).load(imageUrl).get();
+        } catch (IOException ex) {
+            Log.e("BLR", "Could not load imageUrl", ex);
+            return null;
+        }
+    }
+
+    private Bitmap fastBlurImage(@NonNull Bitmap bitmap) {
+        BlurFactor factor = new BlurFactor();
+        factor.width = bitmap.getWidth();
+        factor.height = bitmap.getHeight();
+        factor.radius = radius;
+        factor.sampling = sampling;
+        factor.color = color;
+
+        return FastBlur.of(context, bitmap, factor);
+    }
+
+    private class GetHeadBitmapTask extends AsyncTask<Void, Void, Bitmap> {
 
         @Override
-        protected Bitmap doInBackground(String... strings) {
-            try {
-                imageUrl = strings[0];
-                bitmap = loadImg(context, imageUrl);
-            } catch (Exception e) {
-                e.printStackTrace();
+        protected Bitmap doInBackground(Void... strings) {
+            Bitmap bitmap;
+            if (imageUrl != null) {
+                bitmap = loadImgUrl();
+            } else {
+                bitmap = loadAndroidDrawable();
             }
-            return bitmap;
+            if (bitmap == null) {
+                return null;
+            }
+            return fastBlurImage(bitmap);
         }
 
         @Override
         protected void onPostExecute(Bitmap bitmap) {
-            super.onPostExecute(bitmap);
             if (bitmap != null) {
-                Bitmap blurredBitmap = fastBlurImage(bitmap);
-                thisImg.setImageBitmap(blurredBitmap);
+                setImageBitmap(bitmap);
             }
         }
     }
-
-    public static Bitmap loadImg(Context context, String url) {
-        Bitmap bitmap = null;
-        if (!TextUtils.isEmpty(url) && !TextUtils.isEmpty(url.trim())) {
-            try {
-                bitmap = Picasso.with(context).load(url).get();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return bitmap;
-    }
-
-    private Bitmap fastBlurImage(Bitmap bitmap) {
-        Bitmap bitmapBlur = null;
-
-        if (bitmap != null) {
-            BlurFactor factor = new BlurFactor();
-            factor.width = bitmap.getWidth();
-            factor.height = bitmap.getHeight();
-            factor.radius = this.radius;
-            factor.sampling = this.sampling;
-
-            bitmapBlur = FastBlur.of(context, bitmap, factor);
-        }
-
-        return bitmapBlur;
-    }
-
 
 
 }

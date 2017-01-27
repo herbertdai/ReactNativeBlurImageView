@@ -8,7 +8,10 @@ var iface = {
         ...View.propTypes,
         radius: PropTypes.number,
         sampling: PropTypes.number,
+        color: PropTypes.number,
         imageUrl: PropTypes.string,
+        androidDrawable: PropTypes.string,
+        scaleType: PropTypes.string
     },
 };
 
