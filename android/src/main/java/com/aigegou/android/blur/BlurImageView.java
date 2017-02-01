@@ -3,43 +3,56 @@ package com.aigegou.android.blur;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
-import android.util.AttributeSet;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 
+import com.facebook.react.uimanager.NativeViewHierarchyManager;
+import com.facebook.react.uimanager.ThemedReactContext;
+import com.facebook.react.uimanager.UIBlock;
+import com.facebook.react.uimanager.UIManagerModule;
 import com.squareup.picasso.Picasso;
 
+import org.apache.commons.lang3.ObjectUtils;
+
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by herbert on 3/25/16.
  */
 public class BlurImageView extends ImageView {
 
+    private static final Map<String, Bitmap> bitmaps = new HashMap<>();
+
     private final Context context;
+    private final ThemedReactContext reactContext;
     private int radius;
     private int sampling;
     private int color;
     private String imageUrl;
     private String androidDrawable;
+    private String snapshotViewId;
     private GetHeadBitmapTask getheadBitmapTask;
 
     private boolean isDirty = false;
 
-    public BlurImageView(Context context) {
-        this(context, null);
-    }
 
-    public BlurImageView(Context context, AttributeSet attributeSet) {
-        super(context, attributeSet);
+    public BlurImageView(Context context, ThemedReactContext reactContext) {
+        super(context);
+        Log.d("BLR", "Creating BlurImageView");
+        this.reactContext = reactContext;
         this.context = context;
         setScaleType(ScaleType.FIT_XY);
+        updateView();
     }
 
     public void setImageUrl(String imageUrl) {
-        isDirty = true;
+        isDirty = ObjectUtils.notEqual(imageUrl, this.imageUrl);
         this.imageUrl = imageUrl;
     }
 
@@ -61,6 +74,17 @@ public class BlurImageView extends ImageView {
     public void setColor(int color) {
         isDirty = true;
         this.color = color;
+    }
+
+    public void setSnapshotViewId(String id) {
+        isDirty = true;
+        this.snapshotViewId = id;
+    }
+
+    public void cleanupBitmap() {
+        isDirty = true;
+        Log.d("BLR", "View cleanupBitmap");
+        bitmaps.clear();
     }
 
     public void setScaleType(String scaleType) {
@@ -106,11 +130,14 @@ public class BlurImageView extends ImageView {
         if (!isDirty) {
             return;
         }
-        if (imageUrl == null && androidDrawable == null) {
-            throw new RuntimeException("BlurImageView: Must set imageUrl or androidDrawable");
+        isDirty = false;
+        if (imageUrl == null && androidDrawable == null && snapshotViewId == null) {
+            throw new RuntimeException("BlurImageView: Must set imageUrl or androidDrawable or snapshotViewId");
         }
-        if (imageUrl != null && androidDrawable != null) {
-            throw new RuntimeException("BlurImageView: Must set either imageUrl or androidDrawable, not both");
+        // From http://stackoverflow.com/a/3466476
+        if ((imageUrl != null ^ androidDrawable != null ^ snapshotViewId != null)  &&
+            (imageUrl != null && androidDrawable != null && snapshotViewId != null)) {
+            throw new RuntimeException("BlurImageView: Cannot set more than one of imageUrl, androidDrawable and snapshotViewId");
         }
         if (sampling == 0) {
             throw new RuntimeException("BlurImageView: Must set sampling to non-zero value");
@@ -140,6 +167,15 @@ public class BlurImageView extends ImageView {
         }
     }
 
+    public void loadSnapshotViewTag(int snapshotViewTag) {
+        if (bitmaps.containsKey(snapshotViewId)) {
+            Log.d("BLR", "Bitmap already loaded with snapshotViewTag: " + snapshotViewId);
+            return;
+        }
+        UIManagerModule uiManager = reactContext.getNativeModule(UIManagerModule.class);
+        uiManager.addUIBlock(new ViewShot(snapshotViewTag));
+    }
+
     private Bitmap fastBlurImage(@NonNull Bitmap bitmap) {
         BlurFactor factor = new BlurFactor();
         factor.width = bitmap.getWidth();
@@ -155,16 +191,24 @@ public class BlurImageView extends ImageView {
 
         @Override
         protected Bitmap doInBackground(Void... strings) {
-            Bitmap bitmap;
+            Bitmap bitmap = null;
             if (imageUrl != null) {
                 bitmap = loadImgUrl();
-            } else {
+            } else if (androidDrawable != null) {
                 bitmap = loadAndroidDrawable();
+            } else {
+                bitmap = bitmaps.get(snapshotViewId);
+                if (bitmap != null) {
+                    Log.d("BLR", "Reusing snapshot" + bitmap);
+                    return bitmap;
+                }
             }
+
             if (bitmap == null) {
                 return null;
             }
             return fastBlurImage(bitmap);
+
         }
 
         @Override
@@ -175,5 +219,34 @@ public class BlurImageView extends ImageView {
         }
     }
 
+    private class ViewShot implements UIBlock {
+
+        private final int snapshotViewTag;
+
+        public ViewShot(int snapshotViewTag) {
+            this.snapshotViewTag = snapshotViewTag;
+        }
+
+        @Override
+        public void execute(NativeViewHierarchyManager nativeViewHierarchyManager) {
+            Log.d("BLR", "Executing ViewShot on " + Thread.currentThread().getName());
+            View view = nativeViewHierarchyManager.resolveView(snapshotViewTag);
+            if (view == null) {
+                Log.d("BLR", "No view with setTag " + snapshotViewTag);
+                return;
+            }
+            if (view.getWidth() <= 0 || view.getHeight() <= 0) {
+                Log.d("BLR", "View not sized yet " + view);
+                return;
+            }
+            Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
+            Canvas c = new Canvas(bitmap);
+            view.draw(c);
+
+            bitmap = fastBlurImage(bitmap);
+            bitmaps.put(snapshotViewId, bitmap);
+            setImageBitmap(bitmap);
+        }
+    }
 
 }

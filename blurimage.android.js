@@ -11,6 +11,7 @@ var iface = {
         color: PropTypes.number,
         imageUrl: PropTypes.string,
         androidDrawable: PropTypes.string,
+        snapshotViewId: PropTypes.string,
         scaleType: PropTypes.string
     },
 };
