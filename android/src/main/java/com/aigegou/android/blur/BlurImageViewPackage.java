@@ -24,7 +24,7 @@ public class BlurImageViewPackage implements ReactPackage {
     @Override
     public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
         return Arrays.<ViewManager>asList(
-                new BlurImageViewManager()
+                new BlurImageViewManager(reactContext.getCurrentActivity())
         );
     }
 
