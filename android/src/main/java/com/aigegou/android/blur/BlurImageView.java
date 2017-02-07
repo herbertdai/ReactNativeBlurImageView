@@ -174,6 +174,7 @@ public class BlurImageView extends ImageView {
     public void loadSnapshotViewTag(int snapshotViewTag) {
         if (bitmaps.containsKey(snapshotViewId)) {
             Log.d("BLR", "Bitmap already loaded with snapshotViewTag: " + snapshotViewId);
+            notifyChange("viewShotSet");
             return;
         }
         UIManagerModule uiManager = reactContext.getNativeModule(UIManagerModule.class);
