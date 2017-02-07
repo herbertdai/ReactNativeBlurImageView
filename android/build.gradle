@@ -37,6 +37,17 @@ android {
     }
 }
 
+repositories {
+    mavenCentral()
+    maven {
+        // Use peer dependencies because the latest AAR com.facebook.react:react-native does not contain
+        // the latest code in react-native/android from npm.
+        // When referencing the project you will have to substitute out react-native library for your
+        // node_module version.
+        url "$projectDir/../node_modules/react-native/android"
+    }
+}
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'

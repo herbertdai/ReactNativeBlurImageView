@@ -16,4 +16,4 @@ var iface = {
     },
 };
 
-module.exports = requireNativeComponent('RCTBlurImageView', iface);
+module.exports = requireNativeComponent('RCTBlurImageView', iface, {nativeOnly: {onChange: true}});
