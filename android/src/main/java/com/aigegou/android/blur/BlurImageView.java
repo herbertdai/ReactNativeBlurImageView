@@ -225,6 +225,7 @@ public class BlurImageView extends ImageView {
     }
 
     public void notifyChange(String message) {
+        Log.d("BLR", "Notifying onChange " + message);
         WritableMap event = Arguments.createMap();
         event.putString("message", message);
         ReactContext reactContext = (ReactContext)getContext();
