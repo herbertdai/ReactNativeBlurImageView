@@ -10,10 +10,14 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.NativeViewHierarchyManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.UIBlock;
 import com.facebook.react.uimanager.UIManagerModule;
+import com.facebook.react.uimanager.events.RCTEventEmitter;
 import com.squareup.picasso.Picasso;
 
 import org.apache.commons.lang3.ObjectUtils;
@@ -215,8 +219,20 @@ public class BlurImageView extends ImageView {
         protected void onPostExecute(Bitmap bitmap) {
             if (bitmap != null) {
                 setImageBitmap(bitmap);
+                notifyChange("blurSet");
             }
         }
+    }
+
+    public void notifyChange(String message) {
+        WritableMap event = Arguments.createMap();
+        event.putString("message", message);
+        ReactContext reactContext = (ReactContext)getContext();
+        reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
+                getId(),
+                "topChange",
+                event);
+
     }
 
     private class ViewShot implements UIBlock {
@@ -246,6 +262,7 @@ public class BlurImageView extends ImageView {
             bitmap = fastBlurImage(bitmap);
             bitmaps.put(snapshotViewId, bitmap);
             setImageBitmap(bitmap);
+            notifyChange("viewShotSet");
         }
     }
 
