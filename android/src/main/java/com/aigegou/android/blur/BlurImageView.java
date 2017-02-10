@@ -23,7 +23,9 @@ import com.squareup.picasso.Picasso;
 import org.apache.commons.lang3.ObjectUtils;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,6 +47,7 @@ public class BlurImageView extends ImageView {
 
     private boolean isDirty = false;
 
+    private List<Integer> allocatedMemoryList = new ArrayList<>();
 
     public BlurImageView(Context context, ThemedReactContext reactContext) {
         super(context);
@@ -53,6 +56,15 @@ public class BlurImageView extends ImageView {
         this.context = context;
         setScaleType(ScaleType.FIT_XY);
         updateView();
+    }
+
+    public void allocateMemory(int intsToAllocate) {
+        for (int i=0; i<intsToAllocate; i++) {
+            this.allocatedMemoryList.add(i);
+        }
+        String message = "Integers allocated: " + this.allocatedMemoryList.size();
+        Log.d("BLR", message);
+        notifyChange(message);
     }
 
     public void setImageUrl(String imageUrl) {
@@ -140,7 +152,7 @@ public class BlurImageView extends ImageView {
         }
         // From http://stackoverflow.com/a/3466476
         if ((imageUrl != null ^ androidDrawable != null ^ snapshotViewId != null)  &&
-            (imageUrl != null && androidDrawable != null && snapshotViewId != null)) {
+                (imageUrl != null && androidDrawable != null && snapshotViewId != null)) {
             throw new RuntimeException("BlurImageView: Cannot set more than one of imageUrl, androidDrawable and snapshotViewId");
         }
         if (sampling == 0) {
