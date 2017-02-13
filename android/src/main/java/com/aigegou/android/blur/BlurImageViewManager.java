@@ -22,9 +22,11 @@ public class BlurImageViewManager extends SimpleViewManager<BlurImageView> {
     public static final String REACT_CLASS = "RCTBlurImageView";
 
     public static final int COMMAND_SET_CARD_REF_HANDLE = 1;
-    public static final int COMMAND_ALLOCATE_MEMORY = 2;
 
-    public BlurImageViewManager(Activity activity) {mCurrentActivity = activity;}
+
+    public BlurImageViewManager(Activity activity) {
+        mCurrentActivity = activity;
+    }
 
     @Override
     public String getName() {
@@ -45,10 +47,7 @@ public class BlurImageViewManager extends SimpleViewManager<BlurImageView> {
     @Override
     public Map<String,Integer> getCommandsMap() {
         Log.d("React"," View manager getCommandsMap:");
-        return MapBuilder.of(
-                "setCardRefHandle", COMMAND_SET_CARD_REF_HANDLE,
-                "allocateMemory", COMMAND_ALLOCATE_MEMORY
-        );
+        return MapBuilder.of("setCardRefHandle", COMMAND_SET_CARD_REF_HANDLE);
     }
 
     @Override
@@ -61,12 +60,6 @@ public class BlurImageViewManager extends SimpleViewManager<BlurImageView> {
                 Log.d("BLR", "Command set card ref handle received");
                 int snapshotViewTag = args.getInt(0);
                 view.loadSnapshotViewTag(snapshotViewTag);
-                return;
-            }
-            case COMMAND_ALLOCATE_MEMORY: {
-                Log.d("BLR", "Command allocate memory received");
-                int intsToAllocate = args.getInt(0);
-                view.allocateMemory(intsToAllocate);
                 return;
             }
             default:
