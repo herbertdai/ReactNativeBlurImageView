@@ -16,6 +16,9 @@
     "ImageView",
     "Android"
   ],
+  "peerDependencies": {
+    "react-native": "*"
+  },
   "author": "HerbertDai",
   "license": "MIT",
   "bugs": {

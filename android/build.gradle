@@ -1,3 +1,12 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.2.0'
+    }
+}
+
 apply plugin: 'com.android.library'
 
 repositories {
@@ -28,11 +37,23 @@ android {
     }
 }
 
+repositories {
+    mavenCentral()
+    maven {
+        // Use peer dependencies because the latest AAR com.facebook.react:react-native does not contain
+        // the latest code in react-native/android from npm.
+        // When referencing the project you will have to substitute out react-native library for your
+        // node_module version.
+        url "$projectDir/../node_modules/react-native/android"
+    }
+}
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
     compile 'com.squareup.picasso:picasso:2.5.2'
     compile 'com.android.support:appcompat-v7:23.2.1'
+    compile 'org.apache.commons:commons-lang3:3.5'
 
     compile 'com.facebook.react:react-native:+'
 }

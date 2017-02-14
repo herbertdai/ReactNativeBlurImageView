@@ -8,8 +8,12 @@ var iface = {
         ...View.propTypes,
         radius: PropTypes.number,
         sampling: PropTypes.number,
+        color: PropTypes.number,
         imageUrl: PropTypes.string,
+        androidDrawable: PropTypes.string,
+        snapshotViewId: PropTypes.string,
+        scaleType: PropTypes.string
     },
 };
 
-module.exports = requireNativeComponent('RCTBlurImageView', iface);
+module.exports = requireNativeComponent('RCTBlurImageView', iface, {nativeOnly: {onChange: true}});
